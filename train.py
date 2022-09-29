@@ -1,3 +1,11 @@
+"""
+paper: Pyramid Channel-based Feature Attention Network for image dehazing 
+file: network.py
+about: model for PCFAN
+author: Tao Wang
+date: 01/13/21
+"""
+# --- Imports --- #
 from __future__ import print_function  
 import argparse
 import torch
@@ -5,7 +13,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable 
 from torch.utils.data import DataLoader
-from model.network import VAE
+from model.VAE_20dim import VAE
 from loss.edg_loss import edge_loss
 from datasets.datasets import CloudRemovalDataset
 from os.path import exists, join, basename
@@ -22,7 +30,7 @@ import cv2
 parser = argparse.ArgumentParser(description='Training hyper-parameters for neural network')
 parser.add_argument('--batchSize', type=int, default=1, help='training batch size')
 parser.add_argument('--testBatchSize', type=int, default=1, help='testing batch size')
-parser.add_argument('--nEpochs', type=int, default=300, help='number of epochs to train for')
+parser.add_argument('--nEpochs', type=int, default=10, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0001, help='Learning Rate. Default=0.01')
 parser.add_argument('--threads', type=int, default=15, help='number of threads for data loader to use')
 parser.add_argument('--net', default='', help="path to net_Dehazing (to continue training)")
@@ -32,16 +40,17 @@ opt = parser.parse_args()
 print(opt)
 
 
+
 # ---  hyper-parameters for training and testing the neural network --- #
-train_data_dir = './data/RICE1/'
-val_data_dir = './data/RICE1/'
+train_data_dir = './data/train/'
+val_data_dir = './data/test/'
 train_batch_size = opt.batchSize
 val_batch_size = opt.testBatchSize
 train_epoch = opt.nEpochs
 data_threads = opt.threads
 GPUs_list = opt.n_GPUs
 continueEpochs = opt.continueEpochs
-category = '50dim-l1loss'
+category = '20dim'
 
 
 device_ids = GPUs_list
@@ -50,7 +59,6 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # --- Define the network --- #
 print('===> Building model')
 model = VAE()
-# w_model = Net()
 
 
 # --- Define the MSE loss --- #
@@ -62,12 +70,7 @@ L1_Loss = L1_Loss.to(device)
 
 # --- Multi-GPU --- #
 model = model.to(device)
-# w_model = w_model.to(device)
 model = nn.DataParallel(model, device_ids=device_ids)
-# w_model = nn.DataParallel(w_model, device_ids=device_ids)
-
-# --- Load the network weight --- #
-# w_model.load_state_dict(torch.load('./checkpoints/PCFAN/cloud_removal.pth'))
 
 
 # --- Build optimizer and scheduler --- #
@@ -76,10 +79,10 @@ scheduler = StepLR(optimizer,step_size= train_epoch // 2,gamma=0.1)
 
 
 # --- Load training data and validation/test data --- #
-train_dataset = RICEDataset(root_dir=train_data_dir, transform=transforms.Compose([transforms.ToTensor()]))
+train_dataset = CloudRemovalDataset(root_dir=train_data_dir, transform=transforms.Compose([transforms.ToTensor()]))
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=train_batch_size, num_workers=data_threads, shuffle=True)
 
-val_dataset = RICEDataset(root_dir=val_data_dir, transform=transforms.Compose([transforms.ToTensor()]), train=False)
+val_dataset = CloudRemovalDataset(root_dir=val_data_dir, transform=transforms.Compose([transforms.ToTensor()]), train=False, category='simu')
 val_dataloader = DataLoader(val_dataset, batch_size=val_batch_size, num_workers=data_threads, shuffle=False)
 
 
@@ -92,9 +95,9 @@ for epoch in range(1 + opt.continueEpochs, opt.nEpochs + 1 + opt.continueEpochs)
     psnr_list = []
     for iteration, inputs in enumerate(train_dataloader,1):
 
-        cloud, ref = Variable(inputs['cloud_image']), Variable(inputs['ref_image'])
+        cloud, gt = Variable(inputs['cloud_image']), Variable(inputs['gt_image'])
         cloud = cloud.to(device)
-        ref = ref.to(device)
+        gt = gt.to(device)
 
         # --- Zero the parameter gradients --- #
         optimizer.zero_grad()
@@ -102,33 +105,30 @@ for epoch in range(1 + opt.continueEpochs, opt.nEpochs + 1 + opt.continueEpochs)
         # --- Forward + Backward + Optimize --- #
         model.train()
         cloud_removal, mean, log_var = model(cloud)
-        MSE_loss = MSELoss(cloud_removal, ref)
-        l1_loss = L1_Loss(cloud_removal, ref)
+        MSE_loss = MSELoss(cloud_removal, gt)
+        l1_loss = L1_Loss(cloud_removal, gt)
         kl_div = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
-        EDGE_loss = edge_loss(cloud_removal, ref, device)
-        
-        # w_model.eval()
-        # weighted_l1loss = Weighted_SmoothL1Loss(w_model, cloud_removal, cloud, ref, device, kernel_size=16, stride=16)
-        Loss = l1_loss + 0.01*kl_div + 0.18*EDGE_loss
+        EDGE_loss = edge_loss(cloud_removal, gt, device)
+        Loss = l1_loss + 0.01*kl_div + 0.17*EDGE_loss
         epoch_loss += Loss
         Loss.backward()
         optimizer.step()
 
         if iteration % 100 == 0:
-            print("===>Epoch[{}]({}/{}): Loss: {:.5f} MSELoss: {:.5f} KL_div: {:.6f} L1_loss:{:.4f} EDGE_loss:{:.4f}".format(epoch, iteration, len(train_dataloader), Loss.item(), MSE_loss.item(), kl_div.item(), l1_loss.item(),                   EDGE_loss.item()))
+            print("===>Epoch[{}]({}/{}): Loss: {:.5f} MSELoss: {:.5f} KL_div: {:.6f} L1_loss:{:.4f} EDGE_loss:{:.4f}".format(epoch, iteration, len(train_dataloader), Loss.item(), MSE_loss.item(), kl_div.item(), l1_loss.item(),                     EDGE_loss.item()))
             
         # --- To calculate average PSNR --- #
-        psnr_list.extend(to_psnr(cloud_removal, ref))
+        psnr_list.extend(to_psnr(cloud_removal, gt))
 
     scheduler.step()
     
     train_psnr = sum(psnr_list) / len(psnr_list)
-    save_checkpoints = './checkpoints/VAE/50dim-l1loss/RICE/'
+    save_checkpoints = './checkpoints/VAE/20dim'
     if os.path.isdir(save_checkpoints)== False:
         os.mkdir(save_checkpoints)
 
     # --- Save the network  --- #
-    torch.save(model.state_dict(), './checkpoints/VAE/50dim-l1loss/RICE/cloud_removal.pth')
+    torch.save(model.state_dict(), './checkpoints/VAE/20dim/cloud_removal.pth')
 
     # --- Use the evaluation model in testing --- #
     model.eval()
@@ -137,7 +137,7 @@ for epoch in range(1 + opt.continueEpochs, opt.nEpochs + 1 + opt.continueEpochs)
     
     # --- update the network weight --- #
     if val_psnr >= old_val_psnr:
-        torch.save(model.state_dict(), './checkpoints/VAE/50dim-l1loss/RICE/cloud_removal_best.pth')
+        torch.save(model.state_dict(), './checkpoints/VAE/20dim/cloud_removal_best.pth')
         old_val_psnr = val_psnr
         
-    print_log(epoch, train_epoch, train_psnr, train_psnr, val_psnr, val_ssim, category)
+    print_log(epoch, train_epoch, train_psnr, val_psnr, val_ssim, category)
