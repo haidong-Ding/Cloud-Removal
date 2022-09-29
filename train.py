@@ -1,11 +1,3 @@
-"""
-paper: Pyramid Channel-based Feature Attention Network for image dehazing 
-file: network.py
-about: model for PCFAN
-author: Tao Wang
-date: 01/13/21
-"""
-# --- Imports --- #
 from __future__ import print_function  
 import argparse
 import torch
@@ -13,10 +5,9 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable 
 from torch.utils.data import DataLoader
-from model.network import Net
-from model.VAE_50dim import VAE
+from model.network import VAE
 from loss.edg_loss import edge_loss
-from datasets.datasets import CloudRemovalDataset, RICEDataset
+from datasets.datasets import CloudRemovalDataset
 from os.path import exists, join, basename
 import time
 from torch.optim.lr_scheduler import StepLR
@@ -39,7 +30,6 @@ parser.add_argument('--continueEpochs', type=int, default=0, help='continue epoc
 parser.add_argument("--n_GPUs", help='list of GPUs for training neural network', default=[0], type=list)
 opt = parser.parse_args()
 print(opt)
-
 
 
 # ---  hyper-parameters for training and testing the neural network --- #
