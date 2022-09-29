@@ -1,4 +1,3 @@
-from __future__ import print_function  
 import argparse
 import torch
 import torch.nn as nn  
@@ -8,14 +7,9 @@ from torch.utils.data import DataLoader
 from model.networks import VAE
 from loss.edg_loss import edge_loss
 from datasets.datasets import CloudRemovalDataset
-from os.path import exists, join, basename
-import time
 from torch.optim.lr_scheduler import StepLR
 from torchvision import transforms
 from utils import to_psnr, validation, print_log
-import os
-from PIL import Image
-import cv2
 
 
 # --- Parse hyper-parameters  --- #
