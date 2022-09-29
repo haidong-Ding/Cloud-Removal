@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable 
 from torch.utils.data import DataLoader
-from model.networks import VAE
+from model.network import VAE
 from loss.edg_loss import edge_loss
 from datasets.datasets import CloudRemovalDataset
 from torch.optim.lr_scheduler import StepLR
@@ -99,4 +99,4 @@ for epoch in range(1, opt.nEpochs + 1):
     torch.save(model.state_dict(), './checkpoints/cloud_removal_{}.pth'.format(epoch))
     
     # --- Print log --- #
-    print_log(epoch, train_epoch, train_psnr, val_psnr, val_ssim, category)
+    print_log(epoch, train_epoch, train_psnr, category)
