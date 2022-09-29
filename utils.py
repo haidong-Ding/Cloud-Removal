@@ -66,9 +66,7 @@ def validation(net, val_data_loader, device, save_tag=False):
             cloud, gt, image_name = Variable(val_data['cloud_image']), Variable(val_data['ref_image']),val_data['image_name']
             cloud = cloud.to(device)
             gt = gt.to(device)
-            # cloud_removal ,_ ,_ = net(cloud)
-            # cloud_removal = net(cloud)
-            _, cloud_removal = net(cloud)
+            cloud_removal ,_ ,_ = net(cloud)
 
             # --- Calculate the average PSNR --- #
             psnr = to_psnr(cloud_removal, gt)
@@ -100,12 +98,12 @@ def save_image(cloud_removal, image_name):
         utils.save_image(cloud_removal[ind], './results/Pix2Pix/simu/{}'.format(image_name[ind][:-3] + 'png'))
 
 
-def print_log(epoch, num_epochs, train_psnr, train_ssim, val_psnr, val_ssim, category):
-    print('Epoch [{0}/{1}], Train_PSNR:{2:.2f}, Train_SSIM:{4:.4f}, Val_PSNR:{3:.2f}, Val_SSIM:{4:.4f}'
-          .format(epoch, num_epochs, train_psnr, val_psnr, val_ssim))
+def print_log(epoch, num_epochs, train_psnr, train_ssim, category):
+    print('Epoch [{0}/{1}], Train_PSNR:{2:.2f}, Train_SSIM:{4:.4f}'
+          .format(epoch, num_epochs, train_psnr))
 
     # --- Write the training log --- #
     with open('./logs/{}_log.txt'.format(category), 'a') as f:
-        print('Date: {0}s, Epoch: [{1}/{2}], Train_PSNR: {3:.2f}, Train_SSIM: {4:.4f}, Val_PSNR: {5:.2f}, Val_SSIM: {6:.4f}'
+        print('Date: {0}s, Epoch: [{1}/{2}], Train_PSNR: {3:.2f}, Train_SSIM: {4:.4f}'
               .format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                      epoch, num_epochs, train_psnr, train_ssim, val_psnr, val_ssim), file=f)
+                      epoch, num_epochs, train_psnr, train_ssim), file=f)
