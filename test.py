@@ -1,17 +1,11 @@
-from __future__ import print_function  
-import argparse
 import torch
 import torch.nn as nn  
-import torch.optim as optim
-from torch.autograd import Variable 
 from torch.utils.data import DataLoader
 from model.network import VAE
 from datasets.datasets import CloudRemovalDataset
-from os.path import exists, join, basename
 from torchvision import transforms
 from utils import to_psnr, validation
-import os
-import time
+
 
 # ---  hyper-parameters for testing the neural network --- #
 test_data_dir = './data/test/real/'
