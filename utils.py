@@ -40,28 +40,6 @@ def validation(net, val_data_loader, device, save_tag=False):
     ssim_list = []
 
     for batch_id, val_data in enumerate(val_data_loader):
-        '''
-        print(batch_id)
-        best_psnr = 0
-        best_ssim = 0
-        for i in range(10):   
-            with torch.no_grad():
-                cloud, gt, image_name = Variable(val_data['cloud_image']), Variable(val_data['ref_image']),val_data['image_name']
-                cloud = cloud.to(device)
-                gt = gt.to(device)
-                cloud_removal ,_ ,_ = net(cloud)
-
-            # --- Calculate the average PSNR --- #
-            psnr = to_psnr(cloud_removal, gt)[0]
-            if psnr > best_psnr:
-                best_psnr = psnr
-
-            # --- Calculate the average SSIM --- #
-            ssim = to_ssim_skimage(cloud_removal, gt)[0]
-            if ssim > best_ssim:
-                best_ssim = ssim
-        
-        '''
         with torch.no_grad():
             cloud, gt, image_name = Variable(val_data['cloud_image']), Variable(val_data['ref_image']),val_data['image_name']
             cloud = cloud.to(device)
