@@ -100,12 +100,9 @@ for epoch in range(1, opt.nEpochs + 1):
     scheduler.step()
     
     train_psnr = sum(psnr_list) / len(psnr_list)
-    save_checkpoints = './checkpoints/VAE/20dim'
-    if os.path.isdir(save_checkpoints)== False:
-        os.mkdir(save_checkpoints)
 
     # --- Save the network  --- #
-    torch.save(model.state_dict(), './checkpoints/VAE/20dim/cloud_removal_{}.pth'.format(epoch))
+    torch.save(model.state_dict(), './checkpoints/cloud_removal_{}.pth'.format(epoch))
     
     # --- Print log --- #
     print_log(epoch, train_epoch, train_psnr, val_psnr, val_ssim, category)
