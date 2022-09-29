@@ -1,13 +1,3 @@
-"""
-paper: Pyramid Channel-based Feature Attention Network for image dehazing 
-file: utils.py
-about: all utilities
-author: Tao Wang
-date: 12/01/2021
-"""
-
-# --- Imports --- #
-import time
 import torch
 import torch.nn.functional as F
 import torchvision.utils as utils
@@ -39,7 +29,7 @@ def to_ssim_skimage(cloud, gt):
 
 def validation(net, val_data_loader, device, save_tag=False):
     """
-    :param net: PCFAN
+    :param net: Network
     :param val_data_loader: validation loader
     :param device: The GPU that loads the network
     :param category: indoor or outdoor test dataset
@@ -92,7 +82,7 @@ def validation(net, val_data_loader, device, save_tag=False):
 
         # --- Save image --- #
         if save_tag:
-            path = './results/Pix2Pix/simu'
+            path = './results/'
             if not os.path.exists(path):
                 os.makedirs(path)
             save_image(cloud_removal, image_name)
