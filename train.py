@@ -9,7 +9,8 @@ from loss.edg_loss import edge_loss
 from datasets.datasets import CloudRemovalDataset
 from torch.optim.lr_scheduler import StepLR
 from torchvision import transforms
-from utils import to_psnr, validation, print_log
+from utils import to_psnr, to_ssim_skimage, validation, print_log
+import time
 
 
 # --- Parse hyper-parameters  --- #
@@ -29,7 +30,6 @@ train_batch_size = opt.batchSize
 train_epoch = opt.nEpochs
 data_threads = opt.threads
 GPUs_list = opt.n_GPUs
-category = '50dim'
 
 
 device_ids = GPUs_list
@@ -63,8 +63,9 @@ train_dataloader = DataLoader(dataset=train_dataset, batch_size=train_batch_size
 # --- Training --- #
 for epoch in range(1, opt.nEpochs + 1):
     print("Training...")
-    epoch_loss = 0
+    start_time = time.time()
     psnr_list = []
+    ssim_list = []
     for iteration, inputs in enumerate(train_dataloader,1):
 
         cloud, ref = Variable(inputs['cloud_image']), Variable(inputs['ref_image'])
@@ -81,22 +82,23 @@ for epoch in range(1, opt.nEpochs + 1):
         kl_div = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
         EDGE_loss = edge_loss(cloud_removal, ref, device)
         Loss = l1_loss + 0.01*kl_div + 0.18*EDGE_loss
-        epoch_loss += Loss
         Loss.backward()
         optimizer.step()
 
         if iteration % 100 == 0:
-            print("===>Epoch[{}]({}/{}): Loss: {:.5f} KL_div: {:.6f} L1_loss:{:.4f} EDGE_loss:{:.4f}".format(epoch, iteration, len(train_dataloader), Loss.item(), kl_div.item(), l1_loss.item(), EDGE_loss.item()))
+            print("===>Epoch[{}]({}/{}): Loss: {:.5f} KL_div: {:.6f} L1_loss: {:.4f} EDGE_loss: {:.4f} Time: {:.2f}min".format(epoch, iteration, len(train_dataloader), Loss.item(), kl_div.item(), l1_loss.item(), EDGE_loss.item(), (time.time()-start_time)/60))
             
         # --- To calculate average PSNR --- #
         psnr_list.extend(to_psnr(cloud_removal, ref))
+        ssim_list.extend(to_ssim_skimage(cloud_removal, ref))
 
     scheduler.step()
     
     train_psnr = sum(psnr_list) / len(psnr_list)
+    train_ssim = sum(ssim_list) / len(ssim_list)
 
     # --- Save the network  --- #
     torch.save(model.state_dict(), './checkpoints/cloud_removal_{}.pth'.format(epoch))
     
     # --- Print log --- #
-    print_log(epoch, train_epoch, train_psnr, category)
+    print_log(epoch, train_epoch, train_psnr, train_ssim)

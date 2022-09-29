@@ -4,7 +4,7 @@ import torchvision.utils as utils
 from math import log10
 from skimage import metrics
 from torch.autograd import Variable
-import os
+import os, time
 
 def to_psnr(cloud, gt):
     mse = F.mse_loss(cloud, gt, reduction='none')
@@ -68,6 +68,7 @@ def validation(net, val_data_loader, device, save_tag=False):
             gt = gt.to(device)
             cloud_removal ,_ ,_ = net(cloud)
 
+
             # --- Calculate the average PSNR --- #
             psnr = to_psnr(cloud_removal, gt)
 
@@ -83,7 +84,7 @@ def validation(net, val_data_loader, device, save_tag=False):
             path = './results/'
             if not os.path.exists(path):
                 os.makedirs(path)
-            save_image(cloud_removal, image_name, path)
+            save_image(cloud_removal, image_name)
 
     avr_psnr = sum(psnr_list) / len(psnr_list)
     avr_ssim = sum(ssim_list) / len(ssim_list)
@@ -91,19 +92,19 @@ def validation(net, val_data_loader, device, save_tag=False):
     return avr_psnr, avr_ssim
 
 
-def save_image(cloud_removal, image_name, path):
+def save_image(cloud_removal, image_name):
     cloud_removal = torch.split(cloud_removal, 1, dim=0)
     batch_num = len(cloud_removal)
     for ind in range(batch_num):
-        utils.save_image(cloud_removal[ind], path+'{}'.format(image_name[ind][:-3] + 'png'))
+        utils.save_image(cloud_removal[ind], './results/Pix2Pix/simu/{}'.format(image_name[ind][:-3] + 'png'))
 
 
-def print_log(epoch, num_epochs, train_psnr, train_ssim, category):
-    print('Epoch [{0}/{1}], Train_PSNR:{2:.2f}, Train_SSIM:{4:.4f}'
-          .format(epoch, num_epochs, train_psnr))
+def print_log(epoch, num_epochs, train_psnr, train_ssim):
+    print('Epoch [{0}/{1}], Train_PSNR:{2:.2f}, Train_SSIM:{3:.4f}'
+          .format(epoch, num_epochs, train_psnr, train_ssim))
 
     # --- Write the training log --- #
-    with open('./logs/{}_log.txt'.format(category), 'a') as f:
+    with open('./logs/train_log.txt', 'a') as f:
         print('Date: {0}s, Epoch: [{1}/{2}], Train_PSNR: {3:.2f}, Train_SSIM: {4:.4f}'
               .format(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                       epoch, num_epochs, train_psnr, train_ssim), file=f)
