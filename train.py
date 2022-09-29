@@ -21,11 +21,9 @@ import cv2
 # --- Parse hyper-parameters  --- #
 parser = argparse.ArgumentParser(description='Training hyper-parameters for neural network')
 parser.add_argument('--batchSize', type=int, default=1, help='training batch size')
-parser.add_argument('--testBatchSize', type=int, default=1, help='testing batch size')
 parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.0001, help='Learning Rate. Default=0.0001')
 parser.add_argument('--threads', type=int, default=15, help='number of threads for data loader to use')
-parser.add_argument('--net', default='', help="path to net_Dehazing (to continue training)")
 parser.add_argument("--n_GPUs", help='list of GPUs for training neural network', default=[0], type=list)
 opt = parser.parse_args()
 print(opt)
@@ -34,7 +32,6 @@ print(opt)
 # ---  hyper-parameters for training and testing the neural network --- #
 train_data_dir = './data/train/'
 train_batch_size = opt.batchSize
-val_batch_size = opt.testBatchSize
 train_epoch = opt.nEpochs
 data_threads = opt.threads
 GPUs_list = opt.n_GPUs
@@ -50,8 +47,6 @@ model = VAE()
 
 
 # --- Define the MSE loss --- #
-MSELoss = nn.MSELoss()
-MSELoss = MSELoss.to(device)
 L1_Loss = nn.SmoothL1Loss()
 L1_Loss = L1_Loss.to(device)
 
