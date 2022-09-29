@@ -23,15 +23,12 @@ parser.add_argument("--n_GPUs", help='list of GPUs for training neural network',
 opt = parser.parse_args()
 print(opt)
 
-
-# ---  hyper-parameters for training and testing the neural network --- #
+# ---  hyper-parameters for training the neural network --- #
 train_data_dir = './data/train/'
 train_batch_size = opt.batchSize
 train_epoch = opt.nEpochs
 data_threads = opt.threads
 GPUs_list = opt.n_GPUs
-
-
 device_ids = GPUs_list
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -39,26 +36,21 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('===> Building model')
 model = VAE()
 
-
 # --- Define the MSE loss --- #
 L1_Loss = nn.SmoothL1Loss()
 L1_Loss = L1_Loss.to(device)
-
 
 # --- Multi-GPU --- #
 model = model.to(device)
 model = nn.DataParallel(model, device_ids=device_ids)
 
-
 # --- Build optimizer and scheduler --- #
 optimizer = optim.Adam(model.parameters(), lr=opt.lr, betas=(0.5, 0.999)) 
 scheduler = StepLR(optimizer,step_size= train_epoch // 2,gamma=0.1)
 
-
 # --- Load training data and validation/test data --- #
 train_dataset = CloudRemovalDataset(root_dir=train_data_dir, transform=transforms.Compose([transforms.ToTensor()]))
 train_dataloader = DataLoader(dataset=train_dataset, batch_size=train_batch_size, num_workers=data_threads, shuffle=True)
-
 
 # --- Training --- #
 for epoch in range(1, opt.nEpochs + 1):
