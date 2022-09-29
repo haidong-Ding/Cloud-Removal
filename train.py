@@ -23,7 +23,8 @@ parser.add_argument("--n_GPUs", help='list of GPUs for training neural network',
 opt = parser.parse_args()
 print(opt)
 
-# ---  hyper-parameters for training the neural network --- #
+
+# ---  hyper-parameters for training and testing the neural network --- #
 train_data_dir = './data/train/'
 train_batch_size = opt.batchSize
 train_epoch = opt.nEpochs
@@ -80,7 +81,7 @@ for epoch in range(1, opt.nEpochs + 1):
         if iteration % 100 == 0:
             print("===>Epoch[{}]({}/{}): Loss: {:.5f} KL_div: {:.6f} L1_loss: {:.4f} EDGE_loss: {:.4f} Time: {:.2f}min".format(epoch, iteration, len(train_dataloader), Loss.item(), kl_div.item(), l1_loss.item(), EDGE_loss.item(), (time.time()-start_time)/60))
             
-        # --- To calculate average PSNR --- #
+        # --- To calculate average PSNR and SSIM --- #
         psnr_list.extend(to_psnr(cloud_removal, ref))
         ssim_list.extend(to_ssim_skimage(cloud_removal, ref))
 
