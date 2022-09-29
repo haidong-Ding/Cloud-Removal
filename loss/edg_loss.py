@@ -1,13 +1,3 @@
-
-"""
-paper: Pyramid Channel-based Feature Attention Network for image dehazing 
-file: edg_loss.py
-about: edge loss for model training
-author: Tao Wang
-date: 06/13/20
-"""
-
-# --- Imports --- #
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -37,10 +27,5 @@ class Edg_Capture(nn.Module):
 def edge_loss(x,y,device):
     laplace = Edg_Capture().to(device)
     L1 = nn.L1Loss().to(device)
-    tanh = nn.Tanh().to(device)
-    out = L1(tanh(laplace(x)),tanh(laplace(y)))
+    out = L1(laplace(x),laplace(y))
     return out
-
-
-
-
