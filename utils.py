@@ -83,7 +83,7 @@ def validation(net, val_data_loader, device, save_tag=False):
             path = './results/'
             if not os.path.exists(path):
                 os.makedirs(path)
-            save_image(cloud_removal, image_name)
+            save_image(cloud_removal, image_name, path)
 
     avr_psnr = sum(psnr_list) / len(psnr_list)
     avr_ssim = sum(ssim_list) / len(ssim_list)
@@ -91,11 +91,11 @@ def validation(net, val_data_loader, device, save_tag=False):
     return avr_psnr, avr_ssim
 
 
-def save_image(cloud_removal, image_name):
+def save_image(cloud_removal, image_name, path):
     cloud_removal = torch.split(cloud_removal, 1, dim=0)
     batch_num = len(cloud_removal)
     for ind in range(batch_num):
-        utils.save_image(cloud_removal[ind], './results/Pix2Pix/simu/{}'.format(image_name[ind][:-3] + 'png'))
+        utils.save_image(cloud_removal[ind], path+'{}'.format(image_name[ind][:-3] + 'png'))
 
 
 def print_log(epoch, num_epochs, train_psnr, train_ssim, category):
