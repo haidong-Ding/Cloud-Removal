@@ -17,8 +17,6 @@ import time
 test_data_dir = './data/test/real/'
 test_batch_size = 1
 data_threads = 15
-
-
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # --- Validation data loader --- #
@@ -32,10 +30,8 @@ model = VAE()
 model = model.to(device)
 model = nn.DataParallel(model, device_ids=[0])
 
-
 # --- Load the network weight --- #
 model.load_state_dict(torch.load('./checkpoints/cloud_removal_1.pth'))
-
 
 # --- Use the evaluation model in testing --- #
 model.eval()
