@@ -20,6 +20,7 @@ parser.add_argument('--nEpochs', type=int, default=100, help='number of epochs t
 parser.add_argument('--lr', type=float, default=0.0001, help='Learning Rate. Default=0.0001')
 parser.add_argument('--threads', type=int, default=15, help='number of threads for data loader to use')
 parser.add_argument("--n_GPUs", help='list of GPUs for training neural network', default=[0], type=list)
+parser.add_argument('--samples', type=int, default=10, help='number of samples')
 opt = parser.parse_args()
 print(opt)
 
@@ -31,6 +32,7 @@ train_epoch = opt.nEpochs
 data_threads = opt.threads
 GPUs_list = opt.n_GPUs
 device_ids = GPUs_list
+num_samples = opt.samples
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # --- Define the network --- #
@@ -38,7 +40,7 @@ print('===> Building model')
 model = VAE()
 
 # --- Define the MSE loss --- #
-L1_Loss = nn.SmoothL1Loss()
+L1_Loss = nn.SmoothL1Loss(beta=0.5)
 L1_Loss = L1_Loss.to(device)
 
 # --- Multi-GPU --- #
@@ -71,6 +73,17 @@ for epoch in range(1, opt.nEpochs + 1):
         # --- Forward + Backward + Optimize --- #
         model.train()
         cloud_removal, mean, log_var = model(cloud)
+        # --- Multiple samples --- #
+        for i in range(num_samples-1):
+            c, m, l = model(cloud)
+            cloud_removal = cloud_removal + c
+            mean = mean + m
+            log_var = log_var + l
+        
+        # --- Take the expectation --- #
+        cloud_removal = cloud_removal / num_samples
+        mean = mean / num_samples
+        log_var = log_var / num_samples
         l1_loss = L1_Loss(cloud_removal, ref)
         kl_div = - 0.5 * torch.sum(1 + log_var - mean.pow(2) - log_var.exp())
         EDGE_loss = edge_loss(cloud_removal, ref, device)

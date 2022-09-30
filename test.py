@@ -8,7 +8,7 @@ from utils import to_psnr, validation
 
 
 # ---  hyper-parameters for testing the neural network --- #
-test_data_dir = './data/test/real/'
+test_data_dir = './data/test/'
 test_batch_size = 1
 data_threads = 15
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
