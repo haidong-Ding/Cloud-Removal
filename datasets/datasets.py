@@ -12,12 +12,11 @@ import torchvision
 class CloudRemovalDataset(Dataset):
     def __init__(self, root_dir, 
                        crop=False, 
-                       crop_size=512, 
+                       crop_size=256, 
                        rotation=False, 
                        color_augment=False, 
                        transform=None, 
-                       train = True,
-                       category='real'):
+                       train = True):
         """
         Args:
              split_file: Path to the split file
@@ -27,7 +26,7 @@ class CloudRemovalDataset(Dataset):
         if train:
             data_list = root_dir + 'train.txt'
         else:
-            data_list = root_dir + category + '.txt'
+            data_list = root_dir + 'test.txt'
 
         with open(data_list) as f:
             contents = f.readlines()
@@ -44,8 +43,7 @@ class CloudRemovalDataset(Dataset):
         self.rotate90 = transforms.RandomRotation(90)  
         self.rotate45 = transforms.RandomRotation(45)    
         self.train = train
-        self.category = category
-        
+
     def __len__(self):
         return len(self.image_files)
 
@@ -53,15 +51,8 @@ class CloudRemovalDataset(Dataset):
 
         image_name = self.image_files[idx]
           
-        if self.category == 'real' :
-            cloud_image = Image.open(self.root_dir + 'cloud/' + image_name).convert('RGB')
-            ref_image = Image.open(self.root_dir + 'reference/' + image_name).convert('RGB')
-        elif self.category == 'clear':
-            cloud_image = Image.open(self.root_dir + 'time1/' + image_name).convert('RGB')
-            ref_image = Image.open(self.root_dir + 'time2/' + image_name).convert('RGB')
-        else:
-            cloud_image = Image.open(self.root_dir + 'cloud/' + image_name).convert('RGB')
-            ref_image = Image.open(self.root_dir + 'gts/' + image_name).convert('RGB')
+        cloud_image = Image.open(self.root_dir + 'cloud/' + image_name).convert('RGB')
+        ref_image = Image.open(self.root_dir + 'reference/' + image_name).convert('RGB')
 
         if self.rotation:
             degree = random.choice([90, 180, 270])
